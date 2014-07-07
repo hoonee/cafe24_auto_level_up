@@ -82,12 +82,17 @@ def is_family(data):
     return 'value-none' == re.findall(r'name="add1" value="(.*?)"', data)[0]
 
 
-def is_valid_position(data):
-    position = re.findall(r'name="add2" value="(.*?)"', data)[0]
+def get_position(data):
+    return re.findall(r'name="add2" value="(.*?)"', data)[0]
+
+
+def is_valid_position(position):
     is_valid_position = False
-    if(position == 'staff'):
+    if position == 'staff':
         is_valid_position = True
-    elif(position == 'leader'):
+    elif position == 'leader':
+        is_valid_position = True
+    elif position == 'wsa':
         is_valid_position = True
     return is_valid_position
 
@@ -98,6 +103,8 @@ def get_position_number(position):
         position_number = 3
     elif position == 'leader':
         position_number = 2
+    elif position == 'wsa':
+        position_number = 4
     return position_number
 
 
@@ -148,8 +155,8 @@ def get_formdata(data):
         'child': "child_00",
         'car': "car_00",
         'earning': "earning_00",
-        'add1': re.findall(r'name="add1" value="(.*?)"', data)[0],
-        'add2': re.findall(r'name="add2" value="(.*?)"', data)[0],
+        'add1': '',
+        'add2': '',
         'add3': re.findall(r'name="add3" value="(.*?)"', data)[0],
         'add4': re.findall(r'name="add4" value="(.*?)"', data)[0],
         'bank_account_owner': re.findall(r'name="bank_account_owner" value="(.*?)"', data)[0],
@@ -167,7 +174,9 @@ def level_up_if_family_member(cookie):
         resp = conn.getresponse()
         assert resp.status == 200
         data = resp.read()
-        if is_family(data) and is_valid_position(data):
+        print 'Check up', user_id
+        user_position = get_position(data)
+        if is_family(data) and is_valid_position(user_position):
             form_data = get_formdata(data)
             body = urllib.urlencode(form_data)
             headers = {'Cookie': cookie,
@@ -179,22 +188,33 @@ def level_up_if_family_member(cookie):
             assert resp.status == 200
             data = resp.read()
             assert "location.href='/admin/php/shop1/c/member_admin_d_f.php?member_id=" + user_id + "'" in data
+            print 'Level up', user_id, 'to', user_position
     conn.close()
 
 
-print 'Cafe24 Auto Level Up Solution.'
+print 'Cafe24 Auto Manage Group Solution.'
 mall_pw = raw_input("Password : ")
+print 'Ready to run.'
 data = cafe24_login(mall_pw)
+print 'Success to login of cafe24.'
+time.sleep(1)
 data = access_user_id_check_page(data)
+print 'Success to get the access-page.'
+time.sleep(1)
 access_manage_page('/admin/php/' + data['location'])
+print 'Success to certification of the access-page.'
+print 'Complete to prepare.'
+time.sleep(1)
 while True:
     now = time.localtime()
     now_time = "Run at %04d-%02d-%02d %02d:%02d:%02d" \
                % (now.tm_year, now.tm_mon, now.tm_mday, now.tm_hour, now.tm_min, now.tm_sec)
     print now_time
+    print 'Try to management.'
     try:
         level_up_if_family_member(data['cookie'])
     except AssertionError, e:
         print e
         pass
-    time.sleep(60)
+    print 'Idling process. Please wait a moment...'
+    time.sleep(100)
